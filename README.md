@@ -5,8 +5,8 @@
 - [x] Implement A2C
 - [x] Implement DQN
 - [x] Implement DDPG
-- [ ] Clean code
-- [ ] Create checkpoints
+- [x] Clean code
+- [x] Create checkpoints
 - [ ] Show results in assets
 - [ ] Show comparison
 
