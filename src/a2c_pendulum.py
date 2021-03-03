@@ -22,8 +22,4 @@ agent.train()
 
 agent.test()
 
-plt.plot(agent.episode_rewards)
-plt.title("Episode rewards")
-plt.xlabel("Episodes")
-plt.ylabel("Accumulative Reward")
-plt.show()
+agent.actor_logger.plot_reward(show = True, save = True)
