@@ -3,7 +3,7 @@ import numpy as np
 import os
 import pickle
 from torch import save as tsave
-
+import torch
 from .utils import create_dir
 
 
@@ -40,8 +40,6 @@ class Logger:
     def report(self):
         losses = self._losses
         rewards = self._rewards
-        print("hola")
-        print(losses)
         mean_loss = np.mean(losses)
         se_loss = np.std(losses) / np.sqrt(len(losses))
 
@@ -66,7 +64,9 @@ class Logger:
     def save_model(self, model, fn_model):
         if not fn_model.endswith(".pth"):
             fn_model += ".pth"
-        tsave(model, os.path.join(self.save_model_path, fn_model))
+        torch.save({
+            'model_state_dict': model.state_dict(),
+            }, os.path.join(self.save_model_path, fn_model))
 
     def exception_arisen(self, model):
         self.report()
