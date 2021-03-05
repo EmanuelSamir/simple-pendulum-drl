@@ -2,6 +2,12 @@ env/
 .git
 .vscode
 .ipynb_checkpoints
-algorithms/A2C/
-models/A2C/
-results/A2C/
+data/A2C/*
+checkpoints/A2C/*
+results/A2C/*
+data/DDPG/*
+checkpoints/DDPG/*
+results/DDPG/*
+data/DQN/*
+checkpoints/DQN/*
+results/DQN/*

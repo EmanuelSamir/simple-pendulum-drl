@@ -67,7 +67,7 @@ class A2CAgent:
                     action_ix = action.detach().data.numpy()
 
                     # Update env
-                    next_state, reward, is_done, info = self.env.step(self.actions[action_ix])
+                    next_state, reward, is_done, info = self.env.step([self.actions[action_ix]])
 
                     # Advantage 
                     advantage = reward + (1-is_done)* self.gamma * self.critic(t(next_state)) - self.critic(t(state))
@@ -127,7 +127,7 @@ class A2CAgent:
             action_ix = action.detach().data.numpy()
 
             # Update env
-            next_state, reward, is_done, info = self.env.step(self.actions[action_ix])
+            next_state, reward, is_done, info = self.env.step([self.actions[action_ix]])
 
             state = next_state
             time.sleep(0.01)

@@ -74,7 +74,7 @@ class Logger:
         self.save_model(model, "tmp_model")
 
 
-    def plot_reward(self, sliding_window=50, show=False, save=False):
+    def plot_reward(self, sliding_window=10, show=False, save=False):
         rewards = self._moving_average(self._rewards, sliding_window)
         plt.plot(range(len(rewards)), rewards, label= self.save_result_path )
 
