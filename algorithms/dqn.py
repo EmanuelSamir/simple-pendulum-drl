@@ -15,9 +15,9 @@ import torch.nn.functional as F
 class DQNAgent:
     def __init__(
         self, env, state_dim, action_dim, actions, 
-        mem_capacity = 10_000, 
-        n_episodes = 1_000, 
-        gamma = 0.999, 
+        mem_capacity = 1_000, 
+        n_episodes = 10_000, 
+        gamma = 0.9999, 
         eps_max = 1.0, 
         eps_min = 0.1, 
         load_model_path = None,
@@ -27,10 +27,11 @@ class DQNAgent:
         self.env = env
         self.n_episodes = n_episodes
         self.gamma = gamma
-        self.eps = lambda x: max(0.1, eps_max - x*(eps_max-eps_min)/n_episodes)
+        self.eps = lambda x: max(0.09, eps_max - x*(eps_max-eps_min)/n_episodes*1.8)
 
         # Discrete actions
         self.actions = actions
+        self.action_dim = action_dim
 
         # Models
         self.model = DQN(state_dim, action_dim)
@@ -38,7 +39,7 @@ class DQNAgent:
         self.load_models(load_model_path, load_target_model_path)
 
         # Optimizers
-        self.model_optimizer = torch.optim.Adam(self.model.parameters())
+        self.model_optimizer = torch.optim.Adam(self.model.parameters(), lr =9e-4 ) # best one 5e-4
 
         # Loggers
         self.model_logger = Logger("DQN", "model")
@@ -61,6 +62,7 @@ class DQNAgent:
         self.fill_memory(sample_size)
 
         pbar = tqdm(total=self.n_episodes, position=0, leave=True)
+        max_steps = 0
         try:
             for episode in range(self.n_episodes):
                 # Reset environment
@@ -72,31 +74,51 @@ class DQNAgent:
                 episode_model_loss = 0
                 episode_target_model_loss = 0
                 
+                steps = 0
 
                 while not is_done:
+                    steps += 1
                     # Action sampling
                     if random.random() < self.eps(episode):
                         # Exploration
-                        action = random.sample(range(len(self.actions)), 1)[0] 
+                        action = random.sample(range(self.action_dim), 1)[0] 
                     else:
                         with torch.no_grad():
                             # Exploitation. Feeding model. Chosen max
                             action = self.model(t(state)).max(0)[1].item()
+                            # print('actions {} '.format(self.model(t(state))))
+                            # print('actions {} '.format(self.model(t(state)).max(0)[1]))
+                            # print('actions {} '.format(action))
+                            # print('-------------------')
 
                     # Update env
-                    next_state, reward, is_done, _ = self.env.step(np.array([self.actions[action]]))
+                    if self.actions:
+                        next_state, reward, is_done, _ = self.env.step(np.array([self.actions[action]]))
+                    else:
+                        next_state, reward, is_done, _ = self.env.step(action)
+
+                    if is_done:
+                        reward = 0
 
                     # Memory update
-                    self.memory.update(torch.from_numpy(state), 
+                    if (steps == 500):
+                        self.memory.update(torch.from_numpy(state), 
                                 torch.tensor([action]), 
                                 torch.tensor([reward]).float(),  
-                                torch.from_numpy(next_state))
+                                torch.from_numpy(next_state),
+                                torch.tensor([float(True)]))
+                    else:
+                        self.memory.update(torch.from_numpy(state), 
+                                torch.tensor([action]), 
+                                torch.tensor([reward]).float(),  
+                                torch.from_numpy(next_state),
+                                torch.tensor([float(is_done)]))
 
                     # Sampling s,a,r,s'
-                    states, actions, rewards, next_states  = self.memory.sample(sample_size)
+                    states, actions, rewards, next_states, is_dones  = self.memory.sample(sample_size)
 
                     # Update model
-                    model_loss, target_model_loss = self.update_models(states, actions, rewards, next_states)
+                    model_loss, target_model_loss = self.update_models(states, actions, rewards, next_states, is_dones)
 
                     # Record losses and reward
                     episode_model_loss += model_loss
@@ -104,6 +126,10 @@ class DQNAgent:
                     episode_reward += reward
 
                     state = next_state
+
+                    if (max_steps < steps):
+                        max_steps = steps
+                        #print(max_steps)
                 
                 self.model_logger.update(episode_model_loss, episode_reward, self.model)
                 self.target_model_logger.update(episode_target_model_loss, episode_reward, self.target_model)
@@ -123,18 +149,24 @@ class DQNAgent:
     def fill_memory(self, sample_size):
         state = self.env.reset()
         for _ in range(sample_size):
-            action = random.sample(range(len(self.actions)), 1)[0]
-            next_state, reward, is_done, _ = self.env.step(np.array([self.actions[action]]))
+            action = random.sample(range(self.action_dim), 1)[0]
+            if self.actions:
+                next_state, reward, is_done, _ = self.env.step(np.array([self.actions[action]]))
+            else:
+                next_state, reward, is_done, _ = self.env.step(action)
             self.memory.update( torch.from_numpy(state), 
                                 torch.tensor([action]), 
                                 torch.tensor([reward]).float(),  
-                                torch.from_numpy(next_state))
+                                torch.from_numpy(next_state),
+                                torch.tensor([float(is_done)]))
             state = next_state
 
-    def update_models(self, states, actions, rewards, next_states):
+    def update_models(self, states, actions, rewards, next_states, is_dones):
         max_q = self.target_model(next_states).max(1)[0].detach().unsqueeze(1)
-        
-        y = rewards + max_q * self.gamma
+        x = nn.BatchNorm1d(1, affine = False)
+        # Check why a 32x32 was better. WHYyYYYY
+        max_q_norm = x(max_q.reshape(-1,1))
+        y = rewards + max_q_norm * self.gamma * (1 - is_dones)
 
         # Get Q for every action
         q = self.model(states).gather(1, actions)
@@ -144,12 +176,16 @@ class DQNAgent:
 
         self.model_optimizer.zero_grad()
         model_loss.backward()
+        
+        # print(model_loss.data)
         self.model_optimizer.step()
+        for param in self.model.parameters():
+            param.grad.data.clamp_(-1, 1)
 
         # Update target model. Pyonik method
-        soft_update(self.model, self.target_model, tau = 0.999)
+        soft_update(self.model, self.target_model, tau = 0.99)
         
-        return float(model_loss), float(0)
+        return float(model_loss.data), float(0)
 
     def test(self):
         # Reset environment
@@ -161,10 +197,13 @@ class DQNAgent:
             action = self.model(t(state)).max(0)[1].item()
 
             # Choose action
-            next_state, reward, is_done, _ = self.env.step(np.array([self.actions[action]]))
+            if self.actions:
+                next_state, reward, is_done, _ = self.env.step(np.array([self.actions[action]]))
+            else:
+                next_state, reward, is_done, _ = self.env.step(action)
 
             state = next_state
-            time.sleep(0.01)
+            time.sleep(0.02)
             self.env.render()
 
         self.env.close()

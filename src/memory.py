@@ -3,7 +3,7 @@ import random
 import torch
 
 Transition = namedtuple('Transition',
-                        ('state', 'action', 'reward', 'next_state'))
+                        ('state', 'action', 'reward', 'next_state', 'is_done'))
 
 class ReplayMemory:
     def __init__(self, capacity):
@@ -21,5 +21,6 @@ class ReplayMemory:
         next_states = torch.stack(batch.next_state).float()
         states = torch.stack(batch.state).float()
         actions = torch.cat(batch.action).unsqueeze(1)
-        return states, actions, rewards, next_states
+        is_dones = torch.cat(batch.is_done).unsqueeze(1)
+        return states, actions, rewards, next_states, is_dones
     

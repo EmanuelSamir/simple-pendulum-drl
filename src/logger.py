@@ -75,7 +75,8 @@ class Logger:
 
 
     def plot_reward(self, sliding_window=10, show=False, save=False):
-        rewards = self._moving_average(self._rewards, sliding_window)
+        #rewards = self._moving_average(self._rewards, sliding_window)
+        rewards = self._rewards
         plt.plot(range(len(rewards)), rewards, label= self.save_result_path )
 
         plt.xlabel("Episode")
@@ -84,6 +85,21 @@ class Logger:
 
         if save:
             plt.savefig(os.path.join(self.save_result_path, "rewards.png"))
+
+        if show:
+            plt.show()
+
+    def plot_loss(self, sliding_window=10, show=False, save=False):
+        #rewards = self._moving_average(self._rewards, sliding_window)
+        losses = self._losses
+        plt.plot(range(len(losses)), losses, label= self.save_result_path )
+
+        plt.xlabel("Episode")
+        plt.ylabel("Total losses")
+        plt.legend()
+
+        if save:
+            plt.savefig(os.path.join(self.save_result_path, "losses.png"))
 
         if show:
             plt.show()

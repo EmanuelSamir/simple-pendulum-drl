@@ -55,7 +55,7 @@ class A2CAgent:
                 episode_actor_loss = 0
                 episode_critic_loss = 0
 
-                advantage_total = []
+                advantage_total = []                
                 
                 while not is_done:
                     # Feed Policy network
@@ -67,7 +67,10 @@ class A2CAgent:
                     action_ix = action.detach().data.numpy()
 
                     # Update env
-                    next_state, reward, is_done, info = self.env.step([self.actions[action_ix]])
+                    if self.actions:
+                        next_state, reward, is_done, info = self.env.step([self.actions[action_ix]])
+                    else:
+                        next_state, reward, is_done, info = self.env.step(action_ix)
 
                     # Advantage 
                     advantage = reward + (1-is_done)* self.gamma * self.critic(t(next_state)) - self.critic(t(state))
@@ -81,6 +84,7 @@ class A2CAgent:
                     episode_reward += reward
 
                     state = next_state
+
                 
                 self.actor_logger.update(episode_actor_loss, episode_reward, self.actor)
                 self.critic_logger.update(episode_critic_loss, episode_reward, self.critic)
@@ -126,8 +130,10 @@ class A2CAgent:
             action = action_dist.sample()
             action_ix = action.detach().data.numpy()
 
-            # Update env
-            next_state, reward, is_done, info = self.env.step([self.actions[action_ix]])
+            if self.actions:
+                next_state, reward, is_done, info = self.env.step([self.actions[action_ix]])
+            else:
+                next_state, reward, is_done, info = self.env.step(action_ix)
 
             state = next_state
             time.sleep(0.01)
