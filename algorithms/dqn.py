@@ -23,7 +23,6 @@ class DQNAgent:
         load_model_path = None,
         load_target_model_path = None):
 
-
         self.env = env
         self.n_episodes = n_episodes
         self.gamma = gamma
@@ -39,7 +38,7 @@ class DQNAgent:
         self.load_models(load_model_path, load_target_model_path)
 
         # Optimizers
-        self.model_optimizer = torch.optim.Adam(self.model.parameters(), lr =9e-4 ) # best one 5e-4
+        self.model_optimizer = torch.optim.Adam(self.model.parameters(), lr = 1e-3) # best one 5e-4, 9e-4
 
         # Loggers
         self.model_logger = Logger("DQN", "model")
@@ -66,7 +65,7 @@ class DQNAgent:
         try:
             for episode in range(self.n_episodes):
                 # Reset environment
-                state = self.env.reset()
+                state = self.env.reset() 
                 is_done = False
 
                 # Reset
@@ -86,33 +85,33 @@ class DQNAgent:
                         with torch.no_grad():
                             # Exploitation. Feeding model. Chosen max
                             action = self.model(t(state)).max(0)[1].item()
-                            # print('actions {} '.format(self.model(t(state))))
-                            # print('actions {} '.format(self.model(t(state)).max(0)[1]))
-                            # print('actions {} '.format(action))
-                            # print('-------------------')
 
                     # Update env
                     if self.actions:
-                        next_state, reward, is_done, _ = self.env.step(np.array([self.actions[action]]))
+                        next_state, reward, is_done, _ = self.env.step(np.array(self.actions[action]))
                     else:
                         next_state, reward, is_done, _ = self.env.step(action)
 
                     if is_done:
-                        reward = 0
+                        reward = float(0)
 
                     # Memory update
                     if (steps == 500):
-                        self.memory.update(torch.from_numpy(state), 
-                                torch.tensor([action]), 
-                                torch.tensor([reward]).float(),  
-                                torch.from_numpy(next_state),
-                                torch.tensor([float(True)]))
+                        self.memory.update(
+                                preprocess_transition(state), 
+                                preprocess_transition(action), 
+                                preprocess_transition(reward),  
+                                preprocess_transition(next_state),
+                                preprocess_transition(float(True))
+                                )
                     else:
-                        self.memory.update(torch.from_numpy(state), 
-                                torch.tensor([action]), 
-                                torch.tensor([reward]).float(),  
-                                torch.from_numpy(next_state),
-                                torch.tensor([float(is_done)]))
+                        self.memory.update(
+                                preprocess_transition(state), 
+                                preprocess_transition(action), 
+                                preprocess_transition(reward),  
+                                preprocess_transition(next_state),
+                                preprocess_transition(float(is_done))
+                                )
 
                     # Sampling s,a,r,s'
                     states, actions, rewards, next_states, is_dones  = self.memory.sample(sample_size)
@@ -154,11 +153,13 @@ class DQNAgent:
                 next_state, reward, is_done, _ = self.env.step(np.array([self.actions[action]]))
             else:
                 next_state, reward, is_done, _ = self.env.step(action)
-            self.memory.update( torch.from_numpy(state), 
-                                torch.tensor([action]), 
-                                torch.tensor([reward]).float(),  
-                                torch.from_numpy(next_state),
-                                torch.tensor([float(is_done)]))
+            self.memory.update(
+                                preprocess_transition(state), 
+                                preprocess_transition(action), 
+                                preprocess_transition(reward),  
+                                preprocess_transition(next_state),
+                                preprocess_transition(float(is_done))
+                                )
             state = next_state
 
     def update_models(self, states, actions, rewards, next_states, is_dones):
@@ -198,7 +199,7 @@ class DQNAgent:
 
             # Choose action
             if self.actions:
-                next_state, reward, is_done, _ = self.env.step(np.array([self.actions[action]]))
+                next_state, reward, is_done, _ = self.env.step(np.array(self.actions[action]))
             else:
                 next_state, reward, is_done, _ = self.env.step(action)
 

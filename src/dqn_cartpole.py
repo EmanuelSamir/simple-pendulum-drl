@@ -17,13 +17,11 @@ actions = None
 action_dim = 2
 
 
-agent = DQNAgent(env, state_dim, action_dim, actions, n_episodes = 1800)
+agent = DQNAgent(env, state_dim, action_dim, actions, n_episodes = 1000)
 
-agent.load_models("../checkpoints/DQN/model/tmp_model.pth", "../checkpoints/DQN/target_model/tmp_model.pth")
-
-#agent.train()  
+agent.train()  
 
 agent.test()
 
-#agent.model_logger.plot_reward(show = True, save = True)
-#agent.model_logger.plot_loss(show = True, save = True)
+agent.model_logger.plot_reward(show = True, save = True)
+agent.model_logger.plot_loss(show = True, save = True)

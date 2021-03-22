@@ -26,3 +26,20 @@ def soft_update(local_model, target_model, tau):
     """
     for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
         target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
+
+
+def preprocess_transition(data, force_to_float = False):
+    t = torch.tensor(data)
+    dim = len(list(t.shape))
+    if (dim == 0):
+        t = t.unsqueeze(0).unsqueeze(0)
+    elif (dim == 1):
+        t = t.unsqueeze(0)
+    t = t.reshape(1,-1)   
+    if force_to_float:
+        t = t.float()   
+    return t
+
+    # num -> 1, 1 
+    # list -> 1 list   len(lst), 1
+    # array -> 1, array shape[0], 1

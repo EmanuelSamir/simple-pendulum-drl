@@ -9,7 +9,7 @@ import time
 import numpy as np
 from matplotlib import pyplot as plt
 
-env = gym.make("Pendulum-v0")
+env = gym.make("MountainCarContinuous-v0")
 
 # Environments parameters
 state_dim = env.observation_space.shape[0]
@@ -17,7 +17,7 @@ state_dim = env.observation_space.shape[0]
 # No actions given. Continuous case
 action_dim = 1
 
-agent = DDPGAgent(env, state_dim, action_dim, n_episodes=500)
+agent = DDPGAgent(env, state_dim, action_dim, n_episodes=100)
 
 agent.train()  
 

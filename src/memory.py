@@ -15,12 +15,14 @@ class ReplayMemory:
     
     def sample(self, batch_size):
         n_batch = random.sample(self.memory, batch_size)
-
         batch = Transition(*zip(*n_batch))
-        rewards = torch.cat(batch.reward).float().unsqueeze(1)
-        next_states = torch.stack(batch.next_state).float()
-        states = torch.stack(batch.state).float()
-        actions = torch.cat(batch.action).unsqueeze(1)
-        is_dones = torch.cat(batch.is_done).unsqueeze(1)
+        # num (float) -> torch 1 dim -> num (float) (dim, sample) 1, 32
+        # array -> torch 2 dim                       2, 32  
+        #for i in range(32):
+        rewards = torch.cat(batch.reward).float()
+        next_states = torch.cat(batch.next_state).float()
+        states = torch.cat(batch.state).float()
+        actions = torch.cat(batch.action)
+        is_dones = torch.cat(batch.is_done)
         return states, actions, rewards, next_states, is_dones
     

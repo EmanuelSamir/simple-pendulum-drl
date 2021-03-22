@@ -10,7 +10,11 @@ from src.logger import Logger
 
 
 class A2CAgent:
-    def __init__(self, env, state_dim, action_dim, actions, n_episodes = 1_000, gamma = 0.999):
+    def __init__(self, env, state_dim, action_dim, actions, 
+                n_episodes = 1_000, 
+                gamma = 0.999,
+                load_actor_path = None,
+                load_critic_path = None):
         self.env = env
         self.n_episodes = n_episodes
         self.gamma = gamma
@@ -21,7 +25,7 @@ class A2CAgent:
         # Models
         self.actor = Actor(state_dim, action_dim)
         self.critic = Critic(state_dim)
-        #self.load_models("../checkpoints/A2C/actor/tmp_model.pth", "../checkpoints/A2C/critic/tmp_model.pth")
+        self.load_models(load_actor_path, load_critic_path)
 
         # Optimizers
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters())
@@ -68,9 +72,11 @@ class A2CAgent:
 
                     # Update env
                     if self.actions:
-                        next_state, reward, is_done, info = self.env.step([self.actions[action_ix]])
+                        next_state, reward, is_done, info = self.env.step(self.actions[action_ix])
                     else:
                         next_state, reward, is_done, info = self.env.step(action_ix)
+
+                    
 
                     # Advantage 
                     advantage = reward + (1-is_done)* self.gamma * self.critic(t(next_state)) - self.critic(t(state))
@@ -131,7 +137,7 @@ class A2CAgent:
             action_ix = action.detach().data.numpy()
 
             if self.actions:
-                next_state, reward, is_done, info = self.env.step([self.actions[action_ix]])
+                next_state, reward, is_done, info = self.env.step(self.actions[action_ix])
             else:
                 next_state, reward, is_done, info = self.env.step(action_ix)
 
