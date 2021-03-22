@@ -77,7 +77,6 @@ class A2CAgent:
                         next_state, reward, is_done, info = self.env.step(action_ix)
 
                     
-
                     # Advantage 
                     advantage = reward + (1-is_done)* self.gamma * self.critic(t(next_state)) - self.critic(t(state))
                     

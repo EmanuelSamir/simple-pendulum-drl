@@ -11,26 +11,30 @@ import time
 import numpy as np
 from matplotlib import pyplot as plt
 
-env = gym.make('Acrobot-v1')
+env = gym.make('robot2d-v0')
 
 # Environments parameters
 s = env.reset()
 
+
+
 state_dim = s.shape[0]
-# actions =       [
-#                     np.array([0]),
-#                     np.array([-1]),
-#                     np.array([1]),
-#                     np.array([2]),
-#                     np.array([-2])
-#                 ]
-action_dim = env.action_space.n
-actions = None
+actions =       [
+                    np.array([0., 2.]),
+                    np.array([0., -2.]),
+                    np.array([2., 0.]),
+                    np.array([-2., 0.]),
+                ]
+action_dim = 4
 
-agent = A2CAgent(env, state_dim, action_dim, actions, 20)
+#action_dim = env.action_space.n
+#actions = None
 
-agent.train()  
+agent = A2CAgent(env, state_dim, action_dim, actions, 100, load_actor_path= '../checkpoints/A2C/actor/tmp_model.pth', load_critic_path= '../checkpoints/A2C/critic/tmp_model.pth')
+
+#agent.train()  
 
 agent.test()
 
 agent.actor_logger.plot_reward(show = True, save = True)
+agent.actor_logger.plot_loss(show = True, save = True)
